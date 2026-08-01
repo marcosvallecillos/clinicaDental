@@ -1,0 +1,51 @@
+{
+    "version": "1.0",
+    "metadata": {
+        "title": "Manual Profesional Completo para Chatbot de Clínica Dental",
+        "authors": "Equipo Multidisciplinar Clínico y Técnico",
+        "target_audience": "IA Conversacional de Clínica Dental"
+    },
+    "guidelines": {
+        "never_diagnose": true,
+        "required_disclaimer": "Únicamente un odontólogo puede confirmar la causa mediante una exploración clínica.",
+        "allowed_expressions": [
+            "Podría estar relacionado con...",
+            "Existen varias posibles causas...",
+            "Es recomendable una valoración clínica."
+        ]
+    },
+    "symptoms_sample": [
+        {
+            "id": "S001",
+            "name": "Dolor al frío",
+            "category": "Dolor",
+            "urgency": "Código Amarillo / Verde según intensidad",
+            "possible_causes": [
+                "Sensibilidad dentinaria",
+                "Exposición radicular",
+                "Afectación pulpar inicial"
+            ],
+            "chatbot_response_template": "El dolor o molestia al frío puede deberse a diversas causas como sensibilidad o irritación del tejido interno. Es recomendable una valoración clínica."
+        },
+        {
+            "id": "S002",
+            "name": "Dolor nocturno espontáneo",
+            "category": "Dolor Agudo",
+            "urgency": "Código Amarillo (Cita 24-48h)",
+            "possible_causes": [
+                "Inflamación pulpar avanzada (pulpitis)"
+            ],
+            "chatbot_response_template": "El dolor espontáneo que aparece por la noche suele indicar que el interior del diente está sufriendo una fuerte inflamación. Es muy recomendable acudir a revisión prioritaria."
+        }
+    ],
+    "rules": [
+        {
+            "condition": "patient_mentions_difficulty_breathing_or_severe_facial_swelling",
+            "action": "trigger_hospital_emergency_protocol"
+        },
+        {
+            "condition": "patient_asks_for_diagnosis",
+            "action": "refuse_diagnosis_and_recommend_clinical_evaluation"
+        }
+    ]
+}

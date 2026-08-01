@@ -1,0 +1,14 @@
+version: "1.0"
+metadata:
+  title: "Manual Profesional Completo para Chatbot de Clínica Dental"
+  descripcion: "Base de conocimiento clínico y conversacional para IA de clínica dental"
+rules:
+  - id: "R001"
+    si: "dificultad_respiratoria or hinchazon_cuello_ojo"
+    entonces: "derivar_urgencias_hospitalarias"
+  - id: "R002"
+    si: "dolor_nocturno_espontaneo"
+    entonces: "clasificar_codigo_amarillo_cita_24h"
+  - id: "R003"
+    si: "pide_diagnostico_directo"
+    entonces: "recordar_que_ia_no_diagnostica_y_ofrecer_valoracion"

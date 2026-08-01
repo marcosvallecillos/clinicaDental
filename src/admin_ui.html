@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAdmin | Panel de Administración Clínica Dental</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+
+    <!-- FullCalendar CDN -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 antialiased flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR DE NAVEGACIÓN -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col z-20 shadow-xl">
+        <div class="p-6 flex items-center gap-3 border-b border-slate-800">
+            <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl font-bold">
+                <i class="fa-solid fa-tooth"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">MedAdmin</h1>
+                <p class="text-xs text-blue-400">Clínica Dental Bot</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-1">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition font-medium text-sm">
+                <i class="fa-solid fa-chart-line w-5 text-blue-400"></i> Dashboard
+            </button>
+            <button onclick="switchTab('patients')" id="nav-patients"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition font-medium text-sm">
+                <i class="fa-solid fa-users w-5 text-emerald-400"></i> Pacientes / Leads
+            </button>
+            <button onclick="switchTab('appointments')" id="nav-appointments"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition font-medium text-sm">
+                <i class="fa-solid fa-calendar-check w-5 text-purple-400"></i> Agendamientos / Citas
+            </button>
+            <button onclick="switchTab('conversations')" id="nav-conversations"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition font-medium text-sm">
+                <i class="fa-solid fa-comments w-5 text-amber-400"></i> Monitor de Chat Vivo
+            </button>
+            <button onclick="switchTab('settings')" id="nav-settings"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition font-medium text-sm">
+                <i class="fa-solid fa-sliders w-5 text-rose-400"></i> Configuración & IA
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+            <span>Administrador</span>
+            <span class="flex items-center gap-1.5"><span
+                    class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Online</span>
+        </div>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL -->
+    <main class="flex-1 flex flex-col overflow-y-auto bg-slate-100">
+        <!-- HEADER TOPBAR -->
+        <header
+            class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+            <div>
+                <h2 id="page-title" class="text-xl font-bold text-slate-800">Panel General</h2>
+                <p class="text-xs text-slate-500">Gestión de consultas y pacientes en tiempo real</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="loadAllData()"
+                    class="p-2 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition"
+                    title="Recargar datos">
+                    <i class="fa-solid fa-arrows-rotate text-lg"></i>
+                </button>
+                <div class="h-6 w-px bg-slate-200"></div>
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center">
+                        AD
+                    </div>
+                    <div class="text-sm">
+                        <p class="font-semibold text-slate-800">Administrador</p>
+                        <p class="text-xs text-slate-400">Recepción Clínica</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-8">
+
+            <!-- TAB 1: DASHBOARD -->
+            <div id="tab-dashboard" class="tab-content">
+                <!-- METRIC CARDS -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div
+                        class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Leads /
+                                Pacientes</p>
+                            <h3 id="stat-total-leads" class="text-3xl font-bold text-slate-900 mt-1">0</h3>
+                            <div class="flex gap-2 mt-2 text-xs">
+                                <span class="bg-sky-50 text-sky-700 px-2 py-0.5 rounded font-medium"><i
+                                        class="fa-brands fa-telegram"></i> <span
+                                        id="stat-telegram-leads">0</span></span>
+                                <span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-medium"><i
+                                        class="fa-brands fa-whatsapp"></i> <span
+                                        id="stat-whatsapp-leads">0</span></span>
+                            </div>
+                        </div>
+                        <div
+                            class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Citas Hoy</p>
+                            <h3 id="stat-citas-hoy" class="text-3xl font-bold text-purple-600 mt-1">0</h3>
+                            <p class="text-xs text-slate-500 mt-2"><span id="stat-citas-pendientes">0</span> pendientes
+                                de atención</p>
+                        </div>
+                        <div
+                            class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-calendar-day"></i>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Urgencias (Triaje)
+                            </p>
+                            <div class="flex items-center gap-3 mt-1">
+                                <span class="text-2xl font-bold text-rose-600" title="Código Rojo"><i
+                                        class="fa-solid fa-circle-exclamation text-lg"></i> <span
+                                        id="stat-urgencias-rojas">0</span></span>
+                                <span class="text-2xl font-bold text-amber-500" title="Código Amarillo"><i
+                                        class="fa-solid fa-triangle-exclamation text-lg"></i> <span
+                                        id="stat-urgencias-amarillas">0</span></span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2">Atención prioritaria</p>
+                        </div>
+                        <div
+                            class="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-truck-medical"></i>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Mensajes Procesados
+                            </p>
+                            <h3 id="stat-total-mensajes" class="text-3xl font-bold text-slate-900 mt-1">0</h3>
+                            <p class="text-xs text-emerald-600 mt-2 font-medium"><i class="fa-solid fa-bolt"></i> IA
+                                24/7 Activa</p>
+                        </div>
+                        <div
+                            class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-message"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN DE GRAFICOS Y RECIENTES -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- GRAFICO PLATAFORMAS -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-blue-500"></i> Distribución de Leads por Canal
+                        </h4>
+                        <div class="h-64 relative flex justify-center">
+                            <canvas id="leadsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- CITAS RECIENTES -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-clock text-purple-500"></i> Últimas Citas Solicitadas
+                            </h4>
+                            <button onclick="switchTab('appointments')"
+                                class="text-xs font-semibold text-blue-600 hover:underline">Ver todas</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="bg-slate-50 text-slate-400 uppercase text-[10px] font-bold">
+                                    <tr>
+                                        <th class="py-2 px-3">Paciente</th>
+                                        <th class="py-2 px-3">Servicio</th>
+                                        <th class="py-2 px-3">Fecha</th>
+                                        <th class="py-2 px-3">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-appointments-body" class="divide-y divide-slate-100">
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-slate-400">Cargando...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: PACIENTES / LEADS -->
+            <div id="tab-patients" class="tab-content">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <!-- FILTROS DE BÚSQUEDA -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                        <div class="flex items-center gap-3 flex-1 min-w-[280px]">
+                            <div class="relative flex-1">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                                <input type="text" id="patient-search" onkeyup="filterPatients()"
+                                    placeholder="Buscar por nombre, teléfono o email..."
+                                    class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <select id="filter-platform" onchange="filterPatients()"
+                                class="border border-slate-200 rounded-lg text-sm px-3 py-2 bg-white">
+                                <option value="">Todas las Plataformas</option>
+                                <option value="telegram">Telegram</option>
+                                <option value="whatsapp">WhatsApp</option>
+                            </select>
+
+                            <select id="filter-status" onchange="filterPatients()"
+                                class="border border-slate-200 rounded-lg text-sm px-3 py-2 bg-white">
+                                <option value="">Todos los Estados</option>
+                                <option value="new">Nuevo Lead</option>
+                                <option value="scheduled">Cita Agendada</option>
+                                <option value="contacted">Contactado</option>
+                            </select>
+
+                            <select id="filter-triage" onchange="filterPatients()"
+                                class="border border-slate-200 rounded-lg text-sm px-3 py-2 bg-white">
+                                <option value="">Todos los Triajes</option>
+                                <option value="RED">🚨 Código Rojo (Hospital)</option>
+                                <option value="YELLOW">⚠️ Código Amarillo (24h)</option>
+                                <option value="GREEN">🟢 Código Verde (Normal)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- TABLA DE PACIENTES -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-400 uppercase text-[10px] font-bold">
+                                <tr>
+                                    <th class="py-3 px-4">Paciente</th>
+                                    <th class="py-3 px-4">Contacto</th>
+                                    <th class="py-3 px-4">Canal</th>
+                                    <th class="py-3 px-4">Triaje</th>
+                                    <th class="py-3 px-4">Estado</th>
+                                    <th class="py-3 px-4">Fecha Ingreso</th>
+                                    <th class="py-3 px-4 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patients-table-body" class="divide-y divide-slate-100">
+                                <tr>
+                                    <td colspan="7" class="text-center py-6 text-slate-400">Cargando pacientes...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: AGENDAMIENTOS / CITAS -->
+            <div id="tab-appointments" class="tab-content">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-bold text-lg text-slate-800">Calendario & Citas</h3>
+                        <div class="flex gap-2">
+                            <button onclick="toggleCalendarView()" id="btn-toggle-view"
+                                class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm px-4 py-2 rounded-lg transition flex items-center gap-2">
+                                <i class="fa-solid fa-list"></i> Ver Lista
+                            </button>
+                            <button onclick="openNewAppointmentModal()"
+                                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-lg transition flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i> Nueva Cita Manual
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- VISTA CALENDARIO -->
+                    <div id="calendar-view"
+                        class="bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] p-4 border border-slate-200 mt-4">
+                        <div id="calendar" class="w-full text-slate-800 h-[600px]"></div>
+                    </div>
+
+                    <!-- VISTA LISTA (OCULTA POR DEFECTO) -->
+                    <div id="list-view" class="overflow-x-auto hidden mt-4">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-400 uppercase text-[10px] font-bold">
+                                <tr>
+                                    <th class="py-3 px-4">ID</th>
+                                    <th class="py-3 px-4">Paciente</th>
+                                    <th class="py-3 px-4">Servicio</th>
+                                    <th class="py-3 px-4">Fecha y Hora</th>
+                                    <th class="py-3 px-4">Doctor</th>
+                                    <th class="py-3 px-4">Estado</th>
+                                    <th class="py-3 px-4 text-right">Cambiar Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="appointments-table-body" class="divide-y divide-slate-100">
+                                <tr>
+                                    <td colspan="7" class="text-center py-6 text-slate-400">Cargando citas...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: MONITOR DE CONVERSACIONES (LIVE CHAT & HANDOFF) -->
+            <div id="tab-conversations" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[70vh]">
+                    <!-- COLUMNA IZQ: LISTA DE CHATS -->
+                    <div
+                        class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col overflow-hidden">
+                        <h4 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-comments text-amber-500"></i> Pacientes Activos
+                        </h4>
+                        <div id="chat-patient-list" class="flex-1 overflow-y-auto space-y-2 pr-1 color-red">
+                            <p class="color:red;font-size:30px">HOLA</p>
+                        </div>
+                    </div>
+
+                    <!-- COLUMNA DER: TIMELINE DE CONVERSACIÓN E INTERVENCIÓN HUMANA -->
+                    <div
+                        class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+                        <!-- HEADER DEL CHAT SELECCIONADO -->
+                        <div id="chat-header"
+                            class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
+                                    ?
+                                </div>
+                                <div>
+                                    <h5 class="font-bold text-slate-800 text-sm">Selecciona un paciente</h5>
+                                    <p class="text-xs text-slate-400">Haz clic en la lista para ver la conversación
+                                        completa</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MENSAJES BODY -->
+                        <div id="chat-messages-body" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50/50">
+                            <div class="text-center py-12 text-slate-400">
+                                <i class="fa-solid fa-headset text-4xl mb-2 text-slate-300"></i>
+                                <p>Selecciona una conversación a la izquierda para supervisar la IA o responder en
+                                    directo.</p>
+                            </div>
+                        </div>
+
+                        <!-- INPUT PARA RESPONDER COMO AGENTE HUMANO -->
+                        <div id="chat-input-container" class="p-4 border-t border-slate-200 bg-white flex gap-2 hidden">
+                            <input type="text" id="admin-message-input"
+                                placeholder="Escribe un mensaje para responder directamente al paciente..."
+                                class="flex-1 border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
+                                onkeydown="if(event.key==='Enter') sendAdminMessage()">
+                            <button onclick="sendAdminMessage()"
+                                class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-semibold text-sm transition flex items-center gap-2">
+                                <i class="fa-solid fa-paper-plane"></i> Enviar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: CONFIGURACIÓN & IA -->
+            <div id="tab-settings" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- FORMULARIO CLINICA -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-clinic-medical text-rose-500"></i> Información de la Clínica
+                        </h4>
+                        <div class="space-y-4 text-sm">
+                            <div>
+                                <label class="block text-slate-600 font-medium mb-1">Nombre de la Clínica</label>
+                                <input type="text" id="cfg-name"
+                                    class="w-full border border-slate-200 rounded-lg px-3 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-slate-600 font-medium mb-1">Teléfono de Contacto /
+                                    Urgencias</label>
+                                <input type="text" id="cfg-phone"
+                                    class="w-full border border-slate-200 rounded-lg px-3 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-slate-600 font-medium mb-1">Dirección Física</label>
+                                <input type="text" id="cfg-address"
+                                    class="w-full border border-slate-200 rounded-lg px-3 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-slate-600 font-medium mb-1">Horario de Atención</label>
+                                <input type="text" id="cfg-hours"
+                                    class="w-full border border-slate-200 rounded-lg px-3 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-slate-600 font-medium mb-1">Instrucciones Prompt para la
+                                    IA</label>
+                                <textarea id="cfg-instructions" rows="4"
+                                    class="w-full border border-slate-200 rounded-lg px-3 py-2 font-mono text-xs"></textarea>
+                            </div>
+                            <button onclick="saveClinicSettings()"
+                                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-lg transition text-sm">
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ARCHIVOS DE CONOCIMIENTO CARGADOS -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-file-pdf text-red-500"></i> Base de Conocimiento (PDFs y Reglas)
+                        </h4>
+                        <p class="text-xs text-slate-500 mb-4">Documentos detectados automáticamente en la carpeta
+                            <code>/pdfs</code> para alimentar la inteligencia clínica del chatbot:</p>
+
+                        <div id="knowledge-files-list" class="space-y-2 text-sm">
+                            <p class="text-slate-400 text-center py-4">Cargando información de documentos...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MODAL NUEVA CITA -->
+    <div id="modal-new-appt"
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-100">
+            <h4 class="font-bold text-lg text-slate-800 mb-4">Agendar Cita Manual</h4>
+            <div class="space-y-4 text-sm">
+                <div>
+                    <label class="block text-slate-600 font-medium mb-1">Seleccionar Paciente</label>
+                    <select id="modal-patient-id" class="w-full border border-slate-200 rounded-lg px-3 py-2">
+                        <!-- Llenado dinámico -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-600 font-medium mb-1">Fecha y Hora</label>
+                    <input type="datetime-local" id="modal-appt-date"
+                        class="w-full border border-slate-200 rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-slate-600 font-medium mb-1">Tipo de Servicio</label>
+                    <select id="modal-service" class="w-full border border-slate-200 rounded-lg px-3 py-2">
+                        <option value="Revisión General">Revisión General</option>
+                        <option value="Higiene / Limpieza Dental">Higiene / Limpieza Dental</option>
+                        <option value="Cita de Urgencia">Cita de Urgencia</option>
+                        <option value="Ortodoncia">Ortodoncia</option>
+                        <option value="Endodoncia">Endodoncia</option>
+                        <option value="Implantología">Implantología</option>
+                        <option value="Estética / Blanqueamiento">Estética / Blanqueamiento</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-600 font-medium mb-1">Doctor Asignado</label>
+                    <input type="text" id="modal-doctor" value="Dra. Gómez"
+                        class="w-full border border-slate-200 rounded-lg px-3 py-2">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="closeNewAppointmentModal()"
+                    class="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg text-sm">Cancelar</button>
+                <button onclick="submitNewAppointment()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm">Crear
+                    Cita</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT DE CONTROL -->
+    <script>
+        let currentTab = 'dashboard';
+        let allPatients = [];
+        let selectedPatientId = null;
+        let chartInstance = null;
+        let calendarInstance = null;
+        let isListView = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllData();
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(el => el.classList.remove('bg-slate-800', 'text-white'));
+
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            document.getElementById(`nav-${tabId}`).classList.add('bg-slate-800', 'text-white');
+
+            const titles = {
+                'dashboard': 'Dashboard General',
+                'patients': 'Gestión de Pacientes / Leads',
+                'appointments': 'Calendario & Citas',
+                'conversations': 'Monitor de Conversaciones en Vivo',
+                'settings': 'Configuración & IA'
+            };
+            document.getElementById('page-title').innerText = titles[tabId] || 'Panel Admin';
+            currentTab = tabId;
+
+            if (tabId === 'patients') renderPatientsTable();
+            if (tabId === 'appointments') loadAppointments();
+            if (tabId === 'conversations') loadConversationsList();
+            if (tabId === 'settings') loadSettings();
+        }
+
+        async function loadAllData() {
+            await loadStats();
+            await loadPatients();
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/dashboard/stats');
+                const data = await res.json();
+
+                document.getElementById('stat-total-leads').innerText = data.total_leads;
+                document.getElementById('stat-telegram-leads').innerText = data.telegram_leads;
+                document.getElementById('stat-whatsapp-leads').innerText = data.whatsapp_leads;
+                document.getElementById('stat-citas-hoy').innerText = data.appointments_today;
+                document.getElementById('stat-citas-pendientes').innerText = data.pending_appointments;
+                document.getElementById('stat-urgencias-rojas').innerText = data.red_urgencies;
+                document.getElementById('stat-urgencias-amarillas').innerText = data.yellow_urgencies;
+                document.getElementById('stat-total-mensajes').innerText = data.total_messages;
+
+                // Render citas recientes
+                const tbody = document.getElementById('recent-appointments-body');
+                if (data.recent_appointments.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-400">Sin citas agendadas aún</td></tr>';
+                } else {
+                    tbody.innerHTML = data.recent_appointments.map(a => `
+                        <tr>
+                            <td class="py-2 px-3 font-semibold">${a.patient_name}</td>
+                            <td class="py-2 px-3">${a.service_type}</td>
+                            <td class="py-2 px-3 text-xs">${a.appointment_date}</td>
+                            <td class="py-2 px-3"><span class="px-2 py-0.5 text-[10px] font-bold rounded ${a.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${a.status}</span></td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Render Chart.js
+                renderChart(data.telegram_leads, data.whatsapp_leads);
+
+            } catch (err) {
+                console.error("Error cargando stats:", err);
+            }
+        }
+
+        function renderChart(telegram, whatsapp) {
+            const ctx = document.getElementById('leadsChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            console.log(window.Chart);
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Telegram', 'WhatsApp (Twilio)'],
+                    datasets: [{
+                        data: [telegram || 1, whatsapp || 0],
+                        backgroundColor: ['#0284c7', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        async function loadPatients() {
+            try {
+                const res = await fetch('/api/patients');
+                allPatients = await res.json();
+                renderPatientsTable();
+            } catch (err) {
+                console.error("Error cargando pacientes:", err);
+            }
+        }
+
+        function renderPatientsTable() {
+            const tbody = document.getElementById('patients-table-body');
+            const search = document.getElementById('patient-search')?.value.toLowerCase() || '';
+            const platform = document.getElementById('filter-platform')?.value || '';
+            const status = document.getElementById('filter-status')?.value || '';
+            const triage = document.getElementById('filter-triage')?.value || '';
+
+            let filtered = allPatients.filter(p => {
+                const matchSearch = p.full_name.toLowerCase().includes(search) || (p.phone && p.phone.includes(search));
+                const matchPlatform = !platform || p.platform === platform;
+                const matchStatus = !status || p.status === status;
+                const matchTriage = !triage || p.triage_level === triage;
+                return matchSearch && matchPlatform && matchStatus && matchTriage;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400">No se encontraron pacientes</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(p => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="py-3 px-4 font-semibold text-slate-800">${p.full_name}</td>
+                    <td class="py-3 px-4 text-xs">${p.phone}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 text-xs font-semibold rounded ${p.platform === 'telegram' ? 'bg-sky-100 text-sky-800' : 'bg-emerald-100 text-emerald-800'}">
+                            <i class="fa-brands fa-${p.platform}"></i> ${p.platform}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 text-xs font-bold rounded ${p.triage_level === 'RED' ? 'bg-rose-100 text-rose-700' : (p.triage_level === 'YELLOW' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700')}">
+                            ${p.triage_level}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 text-xs font-medium rounded bg-blue-50 text-blue-700">${p.status}</span>
+                    </td>
+                    <td class="py-3 px-4 text-xs text-slate-400">${p.created_at}</td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="selectPatientForChat(${p.id})" class="text-amber-600 hover:text-amber-800 p-1 font-medium text-xs mr-2" title="Ver Chat">
+                            <i class="fa-solid fa-comments"></i> Chat
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterPatients() {
+            renderPatientsTable();
+        }
+
+        let windowAppts = [];
+
+        function toggleCalendarView() {
+            isListView = !isListView;
+            document.getElementById('calendar-view').classList.toggle('hidden', isListView);
+            document.getElementById('list-view').classList.toggle('hidden', !isListView);
+
+            const btn = document.getElementById('btn-toggle-view');
+            btn.innerHTML = isListView ? '<i class="fa-solid fa-calendar"></i> Ver Calendario' : '<i class="fa-solid fa-list"></i> Ver Lista';
+
+            if (!isListView) {
+                // Forzar el renderizado completo solo cuando es visible
+                setTimeout(() => {
+                    renderCalendar(windowAppts);
+                }, 50);
+            }
+        }
+
+        async function loadAppointments() {
+            try {
+                const res = await fetch('/api/appointments');
+                const appts = await res.json();
+                windowAppts = appts;
+
+                // Render list table as before
+                const tbody = document.getElementById('appointments-table-body');
+                if (appts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400">Sin agendamientos registrados</td></tr>';
+                } else {
+                    tbody.innerHTML = appts.map(a => `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3 px-4 font-mono text-xs text-slate-400">#${a.id}</td>
+                        <td class="py-3 px-4 font-semibold text-slate-800">${a.patient_name} <span class="text-xs text-slate-400">(${a.patient_phone})</span></td>
+                        <td class="py-3 px-4 font-medium text-blue-600">${a.service_type}</td>
+                        <td class="py-3 px-4 text-xs font-semibold">${a.appointment_date}</td>
+                        <td class="py-3 px-4 text-xs">${a.doctor_name}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-1 text-xs font-bold rounded ${a.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : (a.status === 'cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700')}">
+                                ${a.status}
+                            </span>
+                        </td>
+                        ${a.status === 'pending' ? `
+                        <td class="py-3 px-4 text-right space-x-1">
+                            <button onclick="updateApptStatus(${a.id}, 'confirmed')" class="px-2 py-1 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">Confirmar</button>
+                            <button onclick="updateApptStatus(${a.id}, 'cancelled')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700">Cancelar</button>
+                            <button onclick="deleteAppointment(${a.id},'deleted')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                        ` : ''}
+                         ${a.status === 'cancelled' ? `
+                        <td class="py-3 px-4 text-right space-x-1">
+                           <button onclick="deleteAppointment(${a.id},'deleted')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                        ` : ''}
+                         ${a.status === 'confirmed' ? `
+                        <td class="py-3 px-4 text-right space-x-1">
+                            <button onclick="updateApptStatus(${a.id}, 'cancelled')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700">Cancelar</button>
+                        </td>
+                        ` : ''}
+                    </tr>
+                    `).join('');
+                }
+
+                // Render FullCalendar SOLO si estamos en la vista calendario
+                if (!isListView) {
+                    renderCalendar(appts);
+                }
+
+            } catch (err) {
+                console.error("Error citas:", err);
+            }
+        }
+
+        function renderCalendar(appts) {
+            const calendarEl = document.getElementById('calendar');
+            if (!calendarEl || isListView) return;
+
+            // Map appointments to FullCalendar events
+            const events = appts.map(a => {
+                let color = '#3b82f6'; // pending -> blue
+                if (a.status === 'confirmed') color = '#10b981'; // emerald
+                if (a.status === 'cancelled') color = '#f43f5e'; // rose
+
+                // Asegurar formato sólido para FullCalendar (agregando segundos si faltan)
+                let dateStr = a.appointment_date;
+                if (dateStr.length === 16) dateStr += ":00";
+                const safeDateStr = dateStr.replace(" ", "T");
+
+                // Calcular duracion (1h) pero mantener en tiempo local, sin 'Z'
+                const d = new Date(safeDateStr);
+                let endStr = null;
+                if (!isNaN(d.getTime())) {
+                    const end = new Date(d.getTime() + 60 * 60 * 1000);
+                    const pad = (n) => n.toString().padStart(2, '0');
+                    endStr = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}:00`;
+                }
+
+                return {
+                    id: a.id,
+                    title: `${a.patient_name} - ${a.service_type}`,
+                    start: safeDateStr,
+                    end: endStr,
+                    backgroundColor: color,
+                    borderColor: color,
+                    extendedProps: { ...a }
+                }
+            });
+
+            if (calendarInstance) {
+                calendarInstance.destroy();
+            }
+
+            calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                locale: 'es',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                slotMinTime: '08:00:00',
+                slotMaxTime: '20:00:00',
+                events: events,
+                allDaySlot: false,
+                height: '100%',
+                eventClick: function (info) {
+                    // Acción al hacer clic; ej. ver detalles. Aquí solo mostramos modal alert
+                    const prop = info.event.extendedProps;
+                    alert(`Paciente: ${prop.patient_name}\nServicio: ${prop.service_type}\nDoctor: ${prop.doctor_name}\nEstado: ${prop.status}\n\nNota/Info: ${prop.notes ? prop.notes : 'N/A'}`);
+                }
+            });
+            calendarInstance.render();
+            // Truco adicional para evitar que FullCalendar se encoja al redimensionar si había retraso UI
+            setTimeout(() => calendarInstance.updateSize(), 50);
+        }
+
+        async function updateApptStatus(id, newStatus) {
+            await fetch(`/api/appointments/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            loadAppointments();
+            loadStats();
+        }
+        async function deleteAppointment(id, newStatus) {
+            await fetch(`/api/appointments/${id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            loadAppointments();
+            loadStats();
+        }
+        function openNewAppointmentModal() {
+            const select = document.getElementById('modal-patient-id');
+            select.innerHTML = allPatients.map(p => `<option value="${p.id}">${p.full_name} (${p.platform})</option>`).join('');
+            document.getElementById('modal-new-appt').classList.remove('hidden');
+        }
+
+        function closeNewAppointmentModal() {
+            document.getElementById('modal-new-appt').classList.add('hidden');
+        }
+
+        async function submitNewAppointment() {
+            const patient_id = document.getElementById('modal-patient-id').value;
+            const date_val = document.getElementById('modal-appt-date').value.replace('T', ' ');
+            const service_type = document.getElementById('modal-service').value;
+            const doctor_name = document.getElementById('modal-doctor').value;
+
+            if (!date_val) {
+                alert("Por favor selecciona la fecha y hora.");
+                return;
+            }
+
+            await fetch('/api/appointments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ patient_id, appointment_date: date_val, service_type, doctor_name })
+            });
+
+            closeNewAppointmentModal();
+            loadAppointments();
+            loadStats();
+        }
+
+        async function loadConversationsList() {
+            const container = document.getElementById('chat-patient-list');
+            if (allPatients.length === 0) await loadPatients();
+
+            container.innerHTML = allPatients.map(p => `
+                <div onclick="selectPatientForChat(${p.id})" class="p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between ${selectedPatientId === p.id ? 'bg-blue-50 border-blue-200' : ''}">
+                    <div>
+                        <p class="font-bold text-sm text-slate-800">${p.full_name}</p>
+                        <p class="text-xs text-slate-400"><i class="fa-brands fa-${p.platform}"></i> ${p.platform_id}</p>
+                    </div>
+                    ${p.triage_level === 'RED' ? '<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-100 text-rose-700">Urgente</span>' : ''}
+                    ${p.triage_level === 'YELLOW' ? '<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-yellow-100 text-yellow-700">Prioridad</span>' : ''}
+                    ${p.triage_level === 'GREEN' ? '<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-green-100 text-green-700">Normal</span>' : ''}
+                </div>
+            `).join('');
+        }
+
+        async function selectPatientForChat(patientId) {
+            selectedPatientId = patientId;
+            switchTab('conversations');
+
+            const res = await fetch(`/api/conversations/patient/${patientId}`);
+            const data = await res.json();
+
+            // Header
+            document.getElementById('chat-header').innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
+                        ${data.patient.full_name[0] || 'P'}
+                    </div>
+                    <div>
+                        <h5 class="font-bold text-slate-800 text-sm">${data.patient.full_name}</h5>
+                        <p class="text-xs text-slate-500"><i class="fa-brands fa-${data.patient.platform}"></i> ${data.patient.platform_id} | Triaje: <strong>${data.patient.triage_level}</strong></p>
+                    </div>
+                </div>
+            `;
+
+            // Body mensajes
+            const body = document.getElementById('chat-messages-body');
+            if (data.conversations.length === 0) {
+                body.innerHTML = '<div class="text-center py-12 text-slate-400">Sin historial de mensajes.</div>';
+            } else {
+                body.innerHTML = data.conversations.map(c => {
+                    const isUser = c.sender === 'user';
+                    const isAdmin = c.sender === 'admin';
+                    const alignClass = isUser ? 'justify-start' : 'justify-end';
+                    const bgClass = isUser ? 'bg-white border border-slate-200 text-slate-800' : (isAdmin ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white');
+                    const badge = isUser ? '👤 Paciente' : (isAdmin ? '👨‍⚕️ Recepción (Admin)' : '🤖 Chatbot IA');
+
+                    return `
+                        <div class="flex ${alignClass}">
+                            <div class="max-w-[75%] ${bgClass} rounded-2xl px-4 py-3 shadow-sm text-sm">
+                                <p class="text-[10px] font-bold opacity-75 mb-1">${badge}</p>
+                                <p class="whitespace-pre-line">${c.message}</p>
+                                <p class="text-[9px] opacity-60 text-right mt-1">${c.timestamp}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                body.scrollTop = body.scrollHeight;
+            }
+
+            document.getElementById('chat-input-container').classList.remove('hidden');
+        }
+
+        async function sendAdminMessage() {
+            const input = document.getElementById('admin-message-input');
+            const message = input.value.trim();
+            if (!message || !selectedPatientId) return;
+
+            input.value = '';
+            await fetch('/api/conversations/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ patient_id: selectedPatientId, message })
+            });
+
+            selectPatientForChat(selectedPatientId);
+        }
+
+        async function loadSettings() {
+            const res = await fetch('/api/settings');
+            const settings = await res.json();
+
+            document.getElementById('cfg-name').value = settings.clinic_name || '';
+            document.getElementById('cfg-phone').value = settings.clinic_phone || '';
+            document.getElementById('cfg-address').value = settings.clinic_address || '';
+            document.getElementById('cfg-hours').value = settings.clinic_hours || '';
+            document.getElementById('cfg-instructions').value = settings.ai_instructions || '';
+
+            // Knowledge files
+            const kres = await fetch('/api/knowledge/files');
+            const kdata = await kres.json();
+
+            const kcontainer = document.getElementById('knowledge-files-list');
+            if (kdata.files.length === 0) {
+                kcontainer.innerHTML = '<p class="text-slate-400 text-center py-4">No se encontraron archivos en /pdfs</p>';
+            } else {
+                kcontainer.innerHTML = kdata.files.map(f => `
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
+                        <span class="font-mono text-xs font-semibold text-slate-700"><i class="fa-solid fa-file-lines text-blue-500 mr-2"></i> ${f}</span>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold">Cargado</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function saveClinicSettings() {
+            const settings = {
+                clinic_name: document.getElementById('cfg-name').value,
+                clinic_phone: document.getElementById('cfg-phone').value,
+                clinic_address: document.getElementById('cfg-address').value,
+                clinic_hours: document.getElementById('cfg-hours').value,
+                ai_instructions: document.getElementById('cfg-instructions').value
+            };
+
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ settings })
+            });
+
+            alert("✅ Configuración de la clínica actualizada con éxito.");
+        }
+    </script>
+</body>
+
+</html>
