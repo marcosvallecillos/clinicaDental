@@ -44,6 +44,7 @@ class Patient(Base):
     status = Column(String(20), default="new", index=True)
     triage_level = Column(String(20), default="GREEN")
     notes = Column(Text, nullable=True)
+    ratings = relationship("Rating", back_populates="patient", cascade="all, delete-orphan")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -61,7 +62,7 @@ class Appointment(Base):
     status = Column(String(20), default="pending", index=True)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-
+    rating = relationship("Rating", back_populates="appointment", cascade="all, delete-orphan", uselist=False)
     patient = relationship("Patient", back_populates="appointments")
 
 class Conversation(Base):
@@ -95,3 +96,23 @@ class AdminUser(Base):
     full_name = Column(String(100), nullable=False)
     role = Column(String(20), default="admin")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+
+class Rating(Base):
+    """Tabla para guardar ratings post-cita (sistema de feedback)"""
+    __tablename__ = "ratings"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    appointment_id = Column(Integer, ForeignKey("appointments.id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id = Column(Integer, ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    doctor_name = Column(String(100), nullable=True)
+    rating_doctor = Column(Integer, nullable=False)  # 1-5 estrellas
+    rating_attention = Column(Integer, nullable=False)  # 1-5 estrellas
+    rating_facilities = Column(Integer, nullable=False)  # 1-5 estrellas
+    comment = Column(Text, nullable=True)
+    wait_time = Column(Integer, nullable=True)  # en minutos
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    appointment = relationship("Appointment", back_populates="rating")
+    patient = relationship("Patient", back_populates="ratings")

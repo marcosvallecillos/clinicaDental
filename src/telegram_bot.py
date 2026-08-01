@@ -42,11 +42,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    welcome_text = (
-        f"👋 **¡Hola, {user_name}!** Bienvenido a la **{os.getenv('CLINIC_NAME', 'Clínica Dental Sonrisas')}**.\n\n"
-        "Soy tu asistente virtual inteligente. ¿En qué te puedo ayudar hoy?\n"
-        "Puedes escribir tus dudas o síntomas directamente o seleccionar una de las siguientes opciones:"
-    )
+    welcome_text = get_engine().get_welcome_message(user_name)
+    welcome_text += "\n\nPuedes escribir tus dudas directamente o seleccionar una opción:"
 
     db = SessionLocal()
     try:
