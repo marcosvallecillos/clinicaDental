@@ -14,26 +14,254 @@
 
     <!-- FullCalendar CDN -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js'></script>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+/* =======================
+   GENERALES
+======================= */
 
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-        }
+body,
+.fc {
+    font-family: 'Inter', sans-serif;
+}
 
-        .tab-content {
-            display: none;
-        }
+.glass-panel {
+    background: rgba(255,255,255,.95);
+    backdrop-filter: blur(10px);
+}
 
-        .tab-content.active {
-            display: block;
-        }
-    </style>
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* =======================
+   CALENDARIO
+======================= */
+
+#calendar-view:not(.hidden) #calendar,
+#calendar .fc {
+    min-height: 600px;
+}
+
+#calendar {
+    height: 700px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* Scroll */
+
+#calendar::-webkit-scrollbar {
+    width: 8px;
+}
+
+#calendar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+#calendar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+#calendar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* =======================
+   FULLCALENDAR
+======================= */
+
+.fc .fc-theme-standard td,
+.fc .fc-theme-standard th {
+    border-color: #f1f5f9;
+}
+
+.fc .fc-toolbar-title {
+    font-size: .95rem !important;
+    font-weight: 600;
+    color: #1e293b;
+    text-transform: capitalize;
+    background: #f1f5f9;
+    padding: 6px 16px;
+    border-radius: 8px;
+}
+
+.fc .fc-col-header {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.fc .fc-col-header-cell {
+    position: sticky !important;
+    top: 0;
+    z-index: 10;
+
+    background: #f8fafc !important;
+
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #64748b;
+
+    padding: 12px 4px !important;
+}
+
+.fc .fc-col-header-cell-cushion {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 4px;
+    color: #475569;
+}
+
+.fc .fc-timegrid-slot-label-cushion {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.fc .fc-daygrid-day {
+    background: #fff;
+}
+
+.fc .fc-daygrid-day:hover {
+    background: #f1f5f9;
+}
+
+.fc .fc-timegrid-slot {
+    height: 3em;
+}
+
+/* =======================
+   BOTONES
+======================= */
+
+.fc .fc-button-primary {
+    background: #e2e8f0 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+
+    border-radius: 8px !important;
+    box-shadow: none !important;
+
+    font-size: .85rem !important;
+    font-weight: 500;
+
+    text-transform: capitalize;
+
+    padding: 6px 16px !important;
+    margin: 0 2px !important;
+}
+
+.fc .fc-button-primary:hover:not(:disabled) {
+    background: #cbd5e1 !important;
+}
+
+.fc .fc-button-primary.fc-button-active:not(:disabled) {
+    background: #0f172a !important;
+    color: #fff !important;
+    border-color: #0f172a !important;
+}
+
+/* =======================
+   EVENTOS
+======================= */
+
+.fc .fc-event {
+    border: none;
+    border-left: 4px solid currentColor !important;
+    border-radius: 8px;
+    padding: 2px !important;
+}
+
+.fc-event-time,
+.fc-time {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.fc-time {
+    color: #000;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.fc .fc-event-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff !important;
+
+    white-space: normal !important;
+    word-wrap: break-word !important;
+
+    padding: 4px !important;
+}
+
+.fc .fc-daygrid-event .fc-event-title {
+    padding: 2px 4px !important;
+}
+
+.fc-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    width: 100%;
+    overflow: hidden;
+
+    padding: 2px 4px;
+}
+
+.fc-patient {
+    font-size: 30px;
+    font-weight: 600;
+    color: #000;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* =======================
+   SCROLL INTERNO
+======================= */
+
+.fc .fc-scroller {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+.fc .fc-scroller-harness {
+    overflow: hidden !important;
+}
+
+/* =======================
+   ESTADOS
+======================= */
+
+.fc-event[data-status="confirmed"] {
+    background: #10b981 !important;
+    border-color: #10b981 !important;
+}
+
+.fc-event[data-status="pending"] {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+
+.fc-event[data-status="cancelled"] {
+    background: #f43f5e !important;
+    border-color: #f43f5e !important;
+    opacity: .6;
+}
+</style>
 </head>
 
 <body class="bg-slate-50 text-slate-800 antialiased flex h-screen overflow-hidden">
@@ -310,10 +538,11 @@
                         </div>
                     </div>
 
+                    
                     <!-- VISTA CALENDARIO -->
                     <div id="calendar-view"
-                        class="bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] p-4 border border-slate-200 mt-4">
-                        <div id="calendar" class="w-full text-slate-800 h-[600px]"></div>
+                        class="bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] p-4 border border-slate-200 mt-4 overflow-hidden flex flex-col">
+                        <div id="calendar" class="w-full text-slate-800 flex-1 overflow-y-auto"></div>
                     </div>
 
                     <!-- VISTA LISTA (OCULTA POR DEFECTO) -->
@@ -323,6 +552,7 @@
                                 <tr>
                                     <th class="py-3 px-4">ID</th>
                                     <th class="py-3 px-4">Paciente</th>
+                                    <th class="py-3 px-4">Teléfono</th>
                                     <th class="py-3 px-4">Servicio</th>
                                     <th class="py-3 px-4">Fecha y Hora</th>
                                     <th class="py-3 px-4">Doctor</th>
@@ -332,7 +562,7 @@
                             </thead>
                             <tbody id="appointments-table-body" class="divide-y divide-slate-100">
                                 <tr>
-                                    <td colspan="7" class="text-center py-6 text-slate-400">Cargando citas...</td>
+                                    <td colspan="8" class="text-center py-6 text-slate-400">Cargando citas...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -350,7 +580,6 @@
                             <i class="fa-solid fa-comments text-amber-500"></i> Pacientes Activos
                         </h4>
                         <div id="chat-patient-list" class="flex-1 overflow-y-auto space-y-2 pr-1 color-red">
-                            <p class="color:red;font-size:30px">HOLA</p>
                         </div>
                     </div>
 
@@ -467,7 +696,7 @@
                 <div>
                     <label class="block text-slate-600 font-medium mb-1">Seleccionar Paciente</label>
                     <select id="modal-patient-id" class="w-full border border-slate-200 rounded-lg px-3 py-2">
-                        <!-- Llenado dinámico -->
+                       
                     </select>
                 </div>
                 <div>
@@ -503,6 +732,51 @@
         </div>
     </div>
 
+    <!-- MODAL DETALLES DE CITA -->
+    <div id="modal-appt-details"
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-100 relative">
+            <button onclick="closeApptDetailsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h4 class="font-bold text-lg text-slate-800 mb-4 border-b border-slate-100 pb-2">Detalles de la Cita</h4>
+            <div class="space-y-4 text-sm text-slate-700">
+                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <span class="font-medium text-slate-500">Paciente</span>
+                    <span id="detail-patient" class="font-bold text-slate-800"></span>
+                </div>
+                <div class="flex justify-between border-b border-slate-100 pb-2">
+                    <span class="font-medium text-slate-500"><i class="fa-solid fa-phone mr-1"></i> Teléfono</span>
+                    <span id="detail-phone"></span>
+                </div>
+                <div class="flex justify-between border-b border-slate-100 pb-2">
+                    <span class="font-medium text-slate-500"><i class="fa-solid fa-tooth mr-1"></i> Servicio</span>
+                    <span id="detail-service" class="font-medium text-blue-600"></span>
+                </div>
+                <div class="flex justify-between border-b border-slate-100 pb-2">
+                    <span class="font-medium text-slate-500"><i class="fa-regular fa-calendar mr-1"></i> Fecha/Hora</span>
+                    <span id="detail-date" class="font-semibold"></span>
+                </div>
+                <div class="flex justify-between border-b border-slate-100 pb-2">
+                    <span class="font-medium text-slate-500"><i class="fa-solid fa-user-doctor mr-1"></i> Doctor</span>
+                    <span id="detail-doctor"></span>
+                </div>
+                <div class="flex justify-between border-b border-slate-100 pb-2">
+                    <span class="font-medium text-slate-500"><i class="fa-solid fa-circle-info mr-1"></i> Estado</span>
+                    <span id="detail-status"></span>
+                </div>
+                <div>
+                    <span class="font-medium text-slate-500 block mb-1">Notas internas:</span>
+                    <p id="detail-notes" class="bg-slate-50 p-2 rounded border border-slate-100 text-xs text-slate-600 italic min-h-[40px]"></p>
+                </div>
+            </div>
+            <div class="flex justify-end mt-6">
+                <button onclick="closeApptDetailsModal()"
+                    class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-6 py-2 rounded-lg text-sm transition w-full">Cerrar Detalles</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT DE CONTROL -->
     <script>
         let currentTab = 'dashboard';
@@ -534,7 +808,15 @@
             currentTab = tabId;
 
             if (tabId === 'patients') renderPatientsTable();
-            if (tabId === 'appointments') loadAppointments();
+            if (tabId === 'appointments') {
+                loadAppointments();
+                if (!isListView) {
+                    setTimeout(() => {
+                        if (windowAppts.length) renderCalendar(windowAppts);
+                        else if (calendarInstance) calendarInstance.updateSize();
+                    }, 120);
+                }
+            }
             if (tabId === 'conversations') loadConversationsList();
             if (tabId === 'settings') loadSettings();
         }
@@ -645,7 +927,7 @@
                         </span>
                     </td>
                     <td class="py-3 px-4">
-                        <span class="px-2 py-1 text-xs font-bold rounded ${p.triage_level === 'RED' ? 'bg-rose-100 text-rose-700' : (p.triage_level === 'YELLOW' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700')}">
+                        <span class="px-2 py-1 text-xs font-bold rounded ${p.triage_level === ' ' ? 'bg-rose-100 text-rose-700' : (p.triage_level === 'YELLOW' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700')}">
                             ${p.triage_level}
                         </span>
                     </td>
@@ -667,6 +949,51 @@
         }
 
         let windowAppts = [];
+
+        function formatApptStatus(status) {
+            const labels = {
+                pending: 'Pendiente',
+                confirmed: 'Confirmada',
+                cancelled: 'Anulada',
+                completed: 'Completada',
+            };
+            const colors = {
+                pending: 'bg-amber-100 text-amber-700',
+                confirmed: 'bg-emerald-100 text-emerald-700',
+                cancelled: 'bg-rose-100 text-rose-700',
+                completed: 'bg-slate-100 text-slate-700',
+            };
+            return `<span class="px-2 py-1 text-xs font-bold rounded ${colors[status] || 'bg-slate-100 text-slate-700'}">${labels[status] || status}</span>`;
+        }
+
+        function renderAppointmentActions(a) {
+            if (a.status === 'pending') {
+                return `<td class="py-3 px-4 text-right space-x-1">
+                    <button onclick="updateApptStatus(${a.id}, 'confirmed')" class="px-2 py-1 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">Confirmar</button>
+                    <button onclick="updateApptStatus(${a.id}, 'cancelled')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700">Cancelar</button>
+                    <button onclick="deleteAppointment(${a.id},'deleted')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700"><i class="fa-solid fa-trash"></i></button>
+                </td>`;
+            }
+            if (a.status === 'confirmed') {
+                return `<td class="py-3 px-4 text-right space-x-1">
+                    <button onclick="updateApptStatus(${a.id}, 'cancelled')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700">Cancelar</button>
+                </td>`;
+            }
+            if (a.status === 'cancelled') {
+                return `<td class="py-3 px-4 text-right space-x-1">
+                    <button onclick="deleteAppointment(${a.id},'deleted')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700"><i class="fa-solid fa-trash"></i></button>
+                </td>`;
+            }
+            return `<td class="py-3 px-4 text-right text-slate-400 text-xs">—</td>`;
+        }
+
+        function toCalendarDate(dateStr) {
+            if (!dateStr) return null;
+            const normalized = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+            const withSeconds = normalized.length === 16 ? `${normalized}:00` : normalized;
+            const parsed = new Date(withSeconds);
+            return isNaN(parsed.getTime()) ? null : parsed;
+        }
 
         function toggleCalendarView() {
             isListView = !isListView;
@@ -693,44 +1020,25 @@
                 // Render list table as before
                 const tbody = document.getElementById('appointments-table-body');
                 if (appts.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400">Sin agendamientos registrados</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-6 text-slate-400">Sin agendamientos registrados</td></tr>';
                 } else {
                     tbody.innerHTML = appts.map(a => `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="py-3 px-4 font-mono text-xs text-slate-400">#${a.id}</td>
-                        <td class="py-3 px-4 font-semibold text-slate-800">${a.patient_name} <span class="text-xs text-slate-400">(${a.patient_phone})</span></td>
-                        <td class="py-3 px-4 font-medium text-blue-600">${a.service_type}</td>
-                        <td class="py-3 px-4 text-xs font-semibold">${a.appointment_date}</td>
-                        <td class="py-3 px-4 text-xs">${a.doctor_name}</td>
-                        <td class="py-3 px-4">
-                            <span class="px-2 py-1 text-xs font-bold rounded ${a.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : (a.status === 'cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700')}">
-                                ${a.status}
-                            </span>
-                        </td>
-                        ${a.status === 'pending' ? `
-                        <td class="py-3 px-4 text-right space-x-1">
-                            <button onclick="updateApptStatus(${a.id}, 'confirmed')" class="px-2 py-1 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">Confirmar</button>
-                            <button onclick="updateApptStatus(${a.id}, 'cancelled')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700">Cancelar</button>
-                            <button onclick="deleteAppointment(${a.id},'deleted')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                        ` : ''}
-                         ${a.status === 'cancelled' ? `
-                        <td class="py-3 px-4 text-right space-x-1">
-                           <button onclick="deleteAppointment(${a.id},'deleted')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                        ` : ''}
-                         ${a.status === 'confirmed' ? `
-                        <td class="py-3 px-4 text-right space-x-1">
-                            <button onclick="updateApptStatus(${a.id}, 'cancelled')" class="px-2 py-1 text-xs bg-rose-600 text-white rounded hover:bg-rose-700">Cancelar</button>
-                        </td>
-                        ` : ''}
+                        <td class="py-3 px-4 font-semibold text-slate-800">${a.patient_name || 'Desconocido'}</td>
+                        <td class="py-3 px-4 text-xs font-medium text-slate-600">${a.patient_phone || '-'}</td>
+                        <td class="py-3 px-4 font-medium text-blue-600">${a.service_type || '-'}</td>
+                        <td class="py-3 px-4 text-xs font-semibold whitespace-nowrap">${a.appointment_date || '-'}</td>
+                        <td class="py-3 px-4 text-xs">${a.doctor_name || 'Por asignar'}</td>
+                        <td class="py-3 px-4">${formatApptStatus(a.status)}</td>
+                        ${renderAppointmentActions(a)}
                     </tr>
                     `).join('');
                 }
 
                 // Render FullCalendar SOLO si estamos en la vista calendario
                 if (!isListView) {
-                    renderCalendar(appts);
+                    setTimeout(() => renderCalendar(appts), 80);
                 }
 
             } catch (err) {
@@ -738,69 +1046,181 @@
             }
         }
 
-        function renderCalendar(appts) {
-            const calendarEl = document.getElementById('calendar');
-            if (!calendarEl || isListView) return;
+function renderCalendar(appts) {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl || isListView) return;
 
-            // Map appointments to FullCalendar events
-            const events = appts.map(a => {
-                let color = '#3b82f6'; // pending -> blue
-                if (a.status === 'confirmed') color = '#10b981'; // emerald
-                if (a.status === 'cancelled') color = '#f43f5e'; // rose
+    // ✅ Map appointments to FullCalendar events
+    const events = appts.map(a => {
+        let color = '#3b82f6'; // pending -> blue
+        if (a.status === 'confirmed') color = '#10b981'; // emerald
+        if (a.status === 'cancelled') color = '#f43f5e'; // rose
 
-                // Asegurar formato sólido para FullCalendar (agregando segundos si faltan)
-                let dateStr = a.appointment_date;
-                if (dateStr.length === 16) dateStr += ":00";
-                const safeDateStr = dateStr.replace(" ", "T");
+        // Asegurar formato sólido para FullCalendar
+        let dateStr = a.appointment_date;
+        if (dateStr.length === 16) dateStr += ":00";
+        const safeDateStr = dateStr.replace(" ", "T");
 
-                // Calcular duracion (1h) pero mantener en tiempo local, sin 'Z'
-                const d = new Date(safeDateStr);
-                let endStr = null;
-                if (!isNaN(d.getTime())) {
-                    const end = new Date(d.getTime() + 60 * 60 * 1000);
-                    const pad = (n) => n.toString().padStart(2, '0');
-                    endStr = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}:00`;
-                }
+        // ✅ IMPORTANTE: Crear título con nombre del paciente VISIBLE
+        const eventTitle = `${a.appointment_date.split(' ')[1]} - ${a.patient_name}`;
 
-                return {
-                    id: a.id,
-                    title: `${a.patient_name} - ${a.service_type}`,
-                    start: safeDateStr,
-                    end: endStr,
-                    backgroundColor: color,
-                    borderColor: color,
-                    extendedProps: { ...a }
-                }
-            });
-
-            if (calendarInstance) {
-                calendarInstance.destroy();
-            }
-
-            calendarInstance = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'timeGridWeek',
-                locale: 'es',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                slotMinTime: '08:00:00',
-                slotMaxTime: '20:00:00',
-                events: events,
-                allDaySlot: false,
-                height: '100%',
-                eventClick: function (info) {
-                    // Acción al hacer clic; ej. ver detalles. Aquí solo mostramos modal alert
-                    const prop = info.event.extendedProps;
-                    alert(`Paciente: ${prop.patient_name}\nServicio: ${prop.service_type}\nDoctor: ${prop.doctor_name}\nEstado: ${prop.status}\n\nNota/Info: ${prop.notes ? prop.notes : 'N/A'}`);
-                }
-            });
-            calendarInstance.render();
-            // Truco adicional para evitar que FullCalendar se encoja al redimensionar si había retraso UI
-            setTimeout(() => calendarInstance.updateSize(), 50);
+        // Calcular duración (1h)
+        const d = new Date(safeDateStr);
+        let endStr = null;
+        if (!isNaN(d.getTime())) {
+            const end = new Date(d.getTime() + 60 * 60 * 1000);
+            const pad = (n) => n.toString().padStart(2, '0');
+            endStr = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}:00`;
         }
 
+        return {
+            id: a.id,
+            title: eventTitle,  // ✅ ESTO AHORA SÍ MOSTRARÁ EL NOMBRE
+            start: safeDateStr,
+            end: endStr,
+            backgroundColor: color,
+            borderColor: color,
+            textColor: '#ffffff',  // ✅ Texto blanco
+            extendedProps: { ...a }
+        }
+    });
+
+    if (calendarInstance) {
+        calendarInstance.destroy();
+    }
+
+    calendarInstance = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        locale: 'es',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        slotMinTime: '08:00:00',
+        slotMaxTime: '20:00:00',
+        events: events,
+        allDaySlot: false,
+        height: '100%',
+        contentHeight: 'auto',
+        // ✅ NUEVO: Configuración visual
+        eventDisplay: 'block',
+        eventTextColor: '#ffffff',
+        eventBorderColor: 'transparent',
+        dayMaxEventRows: 3,
+        // ✅ Estilos personalizados para eventos
+        eventDidMount: function(info) {
+            // Hacer el texto más visible
+            info.el.style.padding = '4px 6px';
+            info.el.style.fontSize = '12px';
+            info.el.style.fontWeight = '500';
+            info.el.style.whiteSpace = 'normal';
+            info.el.style.wordWrap = 'break-word';
+        },
+        eventClick: function (info) {
+            showEventModal(info.event.extendedProps);
+        }
+    });
+    calendarInstance.render();
+    setTimeout(() => calendarInstance.updateSize(), 50);
+}
+
+// ✅ NUEVA FUNCIÓN: Modal mejorado para mostrar detalles
+function showEventModal(apptData) {
+    const status_color = apptData.status === 'confirmed' ? 'text-emerald-700 bg-emerald-100' : 
+                        (apptData.status === 'cancelled' ? 'text-rose-700 bg-rose-100' : 'text-amber-700 bg-amber-100');
+    
+    const triage_color = apptData.patient_triage === 'RED' ? 'text-rose-700 bg-rose-100' : 
+                        (apptData.patient_triage === 'YELLOW' ? 'text-amber-700 bg-amber-100' : 'text-slate-700 bg-slate-100');
+
+    const modalContent = `
+        <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between mb-6">
+                <h4 class="font-bold text-xl text-slate-800">Detalles de la Cita</h4>
+                <button onclick="closeEventModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+            </div>
+
+            <div class="space-y-4 text-sm">
+                <!-- Paciente -->
+                <div class="border-l-4 border-blue-500 pl-4">
+                    <p class="text-xs text-slate-500 uppercase font-bold">👤 Paciente</p>
+                    <p class="font-bold text-slate-800 text-lg">${apptData.patient_name}</p>
+                    <p class="text-xs text-slate-500">${apptData.patient_phone || 'Sin teléfono'}</p>
+                </div>
+
+                <!-- Servicio -->
+                <div class="border-l-4 border-purple-500 pl-4">
+                    <p class="text-xs text-slate-500 uppercase font-bold">💼 Servicio</p>
+                    <p class="font-semibold text-slate-800">${apptData.service_type}</p>
+                </div>
+
+                <!-- Fecha y Hora -->
+                <div class="border-l-4 border-emerald-500 pl-4">
+                    <p class="text-xs text-slate-500 uppercase font-bold">📅 Fecha y Hora</p>
+                    <p class="font-bold text-slate-800">${apptData.appointment_date}</p>
+                </div>
+
+                <!-- Doctor -->
+                <div class="border-l-4 border-indigo-500 pl-4">
+                    <p class="text-xs text-slate-500 uppercase font-bold">👨‍⚕️ Doctor</p>
+                    <p class="font-semibold text-slate-800">${apptData.doctor_name || 'Por asignar'}</p>
+                </div>
+
+                <!-- Triaje -->
+                <div class="border-l-4 border-rose-500 pl-4">
+                    <p class="text-xs text-slate-500 uppercase font-bold">🚨 Triaje</p>
+                    <span class="inline-block px-3 py-1 text-xs font-bold rounded ${triage_color}">
+                        ${apptData.patient_triage || 'Normal'}
+                    </span>
+                </div>
+
+                <!-- Estado -->
+                <div class="border-l-4 border-amber-500 pl-4">
+                    <p class="text-xs text-slate-500 uppercase font-bold">✓ Estado</p>
+                    <span class="inline-block px-3 py-1 text-xs font-bold rounded ${status_color}">
+                        ${apptData.status.toUpperCase()}
+                    </span>
+                </div>
+
+                <!-- Notas -->
+                ${apptData.notes ? `
+                <div class="border-l-4 border-slate-400 pl-4 bg-slate-50 p-3 rounded">
+                    <p class="text-xs text-slate-500 uppercase font-bold mb-1">📝 Notas</p>
+                    <p class="text-slate-700 text-xs">${apptData.notes}</p>
+                </div>
+                ` : ''}
+            </div>
+
+            <!-- Acciones -->
+            <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-slate-200">
+                <button onclick="closeEventModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition">
+                    Cerrar
+                </button>
+                ${apptData.status === 'pending' ? `
+                <button onclick="updateApptStatus(${apptData.id}, 'confirmed')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition">
+                    ✓ Confirmar
+                </button>
+                ` : ''}
+            </div>
+        </div>
+    `;
+
+    // Crear modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'event-modal-overlay';
+    modalOverlay.className = 'fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center';
+    modalOverlay.innerHTML = modalContent;
+    modalOverlay.onclick = function(e) {
+        if (e.target === this) closeEventModal();
+    };
+
+    document.body.appendChild(modalOverlay);
+}
+
+function closeEventModal() {
+    const modal = document.getElementById('event-modal-overlay');
+    if (modal) modal.remove();
+}
         async function updateApptStatus(id, newStatus) {
             await fetch(`/api/appointments/${id}`, {
                 method: 'PUT',
@@ -821,12 +1241,39 @@
         }
         function openNewAppointmentModal() {
             const select = document.getElementById('modal-patient-id');
-            select.innerHTML = allPatients.map(p => `<option value="${p.id}">${p.full_name} (${p.platform})</option>`).join('');
+            select.innerHTML = allPatients.map(p => `<option value="${p.id}">${p.full_name} (${p.platform})</option>` + `<option value="">Juan Carlos</option>`).join('');
             document.getElementById('modal-new-appt').classList.remove('hidden');
         }
 
         function closeNewAppointmentModal() {
             document.getElementById('modal-new-appt').classList.add('hidden');
+        }
+
+        function openApptDetailsModal(prop) {
+            document.getElementById('detail-patient').innerText = prop.patient_name || 'Desconocido';
+            document.getElementById('detail-phone').innerText = prop.patient_phone || 'No registrado';
+            document.getElementById('detail-service').innerText = prop.service_type || '-';
+            document.getElementById('detail-date').innerText = prop.appointment_date || '-';
+            document.getElementById('detail-doctor').innerText = prop.doctor_name || 'Por asignar';
+            
+            const statusLabels = {
+                pending: 'Pendiente', confirmed: 'Confirmada', cancelled: 'Cancelada', completed: 'Completada'
+            };
+            const statusColors = {
+                pending: 'bg-amber-100 text-amber-700', confirmed: 'bg-emerald-100 text-emerald-700',
+                cancelled: 'bg-rose-100 text-rose-700', completed: 'bg-slate-100 text-slate-700'
+            };
+            const statText = statusLabels[prop.status] || prop.status;
+            const statColor = statusColors[prop.status] || 'bg-slate-100 text-slate-700';
+            
+            document.getElementById('detail-status').innerHTML = `<span class="px-2 py-0.5 text-xs font-bold rounded ${statColor}">${statText}</span>`;
+            document.getElementById('detail-notes').innerText = prop.notes ? prop.notes : 'Sin notas registradas.';
+            
+            document.getElementById('modal-appt-details').classList.remove('hidden');
+        }
+
+        function closeApptDetailsModal() {
+            document.getElementById('modal-appt-details').classList.add('hidden');
         }
 
         async function submitNewAppointment() {

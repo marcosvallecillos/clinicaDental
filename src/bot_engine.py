@@ -66,7 +66,8 @@ class ChatbotEngine:
             "respirar", "dificultad para respirar", "no puedo respirar",
             "tragar agua", "tragar saliva", "ojo cerrado", "cuello hinchado",
             "hemorragia", "no para de sangrar", "pérdida de conciencia",
-            "convulsiones", "pecho oprimido", "dolor de pecho", "desmayo"
+            "convulsiones", "pecho oprimido", "dolor de pecho", "desmayo",
+            "roto un diente", "diente roto"
         ]
         if any(kw in msg_lower for kw in red_keywords):
             return "RED", (
@@ -88,6 +89,40 @@ class ChatbotEngine:
                 "¿Te gustaría agendar una cita de urgencia?"
             )
 
+        # AI Triage
+        if self.grok_enabled:
+            return self._grok_evaluate_triage(message)
+
+        return "GREEN", ""
+
+    def _grok_evaluate_triage(self, message: str) -> Tuple[str, str]:
+        try:
+            import openai
+            client = openai.OpenAI(api_key=self.grok_api_key, base_url="https://api.groq.com/openai/v1")
+            prompt = (
+                "Eres un agente médico de triaje. Analiza el siguiente mensaje y determina el nivel de gravedad.\n"
+                "SOLO RESPONDE CON UNA PALABRA: RED, YELLOW, o GREEN.\n"
+                "RED: Urgencia médica hospitalaria, asfixia, sangrado incontrolable.\n"
+                "YELLOW: Necesita atención en clínica de 24-48h (infección, absceso, diente roto o dolor muy fuerte).\n"
+                "GREEN: Ninguno de los anteriores.\n"
+                f"Mensaje: {message}"
+            )
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=10, temperature=0.1
+            )
+            val = response.choices[0].message.content.strip().upper()
+            if "RED" in val:
+                return "RED", (
+                    "🚨 **ALERTA DE URGENCIA MÉDICA** 🚨\n\n"
+                    "Los síntomas que describes requieren atención inmediata.\n"
+                    "Por favor, dirígete al Hospital más cercano."
+                )
+            if "YELLOW" in val:
+                return "YELLOW", "⚠️ **CITA PRIORITARIA** ⚠️\n\nSegún lo que describes, es mejor verte pronto. ¿Te gustaría agendar una cita?"
+        except Exception as e:
+            logger.error(f"Error en _grok_evaluate_triage: {e}")
         return "GREEN", ""
 
     BOOKING_STATES = ("cita_nombre", "cita_telefono", "cita_fecha_hora")
@@ -114,7 +149,7 @@ class ChatbotEngine:
         name_part = f", {user_name.split()[0]}" if user_name else ""
 
         return (
-            f"👋 **¡Hola{name_part}, buenas!** Somos **{clinic_name}**.\n\n"
+            f"👋 **¡Hola buenas!** Somos **{clinic_name}**.\n\n"
             f"Soy el asistente virtual de la clínica. Estoy aquí para ayudarte con "
             f"consultas sobre síntomas, información o agendar una cita.\n\n"
             f"📍 {clinic_address}\n"
@@ -127,14 +162,90 @@ class ChatbotEngine:
         msg_lower = message.lower()
         
         cita_keywords = [
-            "cita", "agendar", "reservar", "turno", "horario disponible",
+            "agendar", "reservar", "turno", "horario disponible",
             "agenda", "quiero agendar", "me gustaría una cita",
             "puedo pedir una cita", "necesito una cita", "deseo agendar",
             "programar una cita", "programar cita", "pedir cita", "pedir una cita",
-            "quiero una cita", "necesito reservar",
+            "quiero una cita", "necesito reservar", "agendar cita",
         ]
-        
-        return any(kw in msg_lower for kw in cita_keywords)
+        if any(kw in msg_lower for kw in cita_keywords):
+            return True
+        # "cita" solo cuenta si no es una consulta médica mixta
+        if "cita" in msg_lower and not self._has_medical_query_intent(message):
+            return True
+        return False
+
+    def _has_medical_query_intent(self, message: str) -> bool:
+        """Detecta consultas sobre síntomas o cómo aliviarlos."""
+        msg = message.lower()
+        keywords = [
+            "dolor", "duele", "molestia", "molestias", "sangra", "sangrado", "sangre",
+            "roto", "rompí", "rompi", "rompido", "fractura", "inflam", "hinch",
+            "fiebre", "pus", "absceso", "síntoma", "sintoma", "encía", "encia",
+            "aliviar", "aliviarlo", "alivio", "qué hago", "que hago",
+            "cómo puedo", "como puedo", "qué puedo", "que puedo",
+            "me pasa", "me duele", "me sangra", "tengo", "experimentando",
+        ]
+        return any(k in msg for k in keywords)
+
+    def _wants_advice_first(self, message: str) -> bool:
+        """El paciente quiere orientación antes de agendar."""
+        msg = message.lower()
+        has_medical = self._has_medical_query_intent(message)
+        has_booking = "agendar" in msg or "reservar" in msg or "programar" in msg
+
+        if "primero" in msg and (has_medical or "diga" in msg or "dime" in msg or "digas" in msg):
+            return True
+        if "antes de" in msg and has_booking:
+            return True
+        if has_medical and has_booking and any(w in msg for w in ["luego", "después", "despues", "primero"]):
+            return True
+        if has_medical and any(w in msg for w in ["alivi", "qué hago", "que hago", "como puedo", "cómo puedo", "solucion"]):
+            return True
+        return has_medical and not has_booking
+
+    def _wants_to_exit_booking_for_question(self, message: str) -> bool:
+        """Detecta que el usuario quiere salir del flujo de cita para preguntar algo."""
+        msg = message.lower()
+        signals = [
+            "primero", "antes", "espera", "no quiero agendar",
+            "cómo", "como", "qué hago", "que hago", "alivi", "dime", "digas",
+            "explica", "orient", "ayuda", "síntoma", "sintoma", "dolor", "sangr",
+        ]
+        return "?" in message or any(s in msg for s in signals)
+
+    def _looks_like_name(self, message: str) -> bool:
+        """Valida si el texto parece un nombre y no una pregunta."""
+        msg = message.strip()
+        if not msg or len(msg) > 60:
+            return False
+        reject_words = [
+            "primero", "quiero", "como", "cómo", "qué", "que", "alivi",
+            "dime", "digas", "cita", "agendar", "reservar", "sangr", "dolor",
+            "molest", "ayuda", "teléfono", "telefono", "nombre es",
+        ]
+        if any(w in msg.lower() for w in reject_words):
+            return False
+        if re.search(r"\d{3,}", msg):
+            return False
+        words = msg.split()
+        return 1 <= len(words) <= 5 and all(re.match(r"^[\wáéíóúñÁÉÍÓÚÑ'-]+$", w) for w in words)
+
+    def _should_start_booking(self, message: str, history: Optional[List[Dict[str, str]]] = None) -> bool:
+        """Solo inicia reserva si el paciente lo pide ahora, no si pide orientación primero."""
+        if self._wants_advice_first(message):
+            return False
+        if len(message) > 60 and self._has_medical_query_intent(message):
+            return False
+        return self._wants_appointment(message, history)
+
+    def _has_deferred_appointment_intent(self, message: str) -> bool:
+        """Quiere cita pero después de resolver la consulta."""
+        msg = message.lower()
+        return self.detect_appointment_intent(message) and (
+            self._wants_advice_first(message)
+            or any(w in msg for w in ["luego", "después", "despues"])
+        )
 
     def _bot_offered_appointment(self, history: List[Dict[str, str]]) -> bool:
         """Comprueba si el bot acaba de ofrecer agendar una cita."""
@@ -166,8 +277,18 @@ class ChatbotEngine:
             "elimina", "eliminar", "cancelar", "cancela", "anular", "anula",
             "borrar", "borra", "quitar", "quita",
         ]
-        appt_words = ["reserva", "cita", "turno"]
+        appt_words = ["reserva", "cita", "turno", "hora"]
         return any(c in msg for c in cancel_words) and any(a in msg for a in appt_words)
+
+    def _detect_modify_appointment_intent(self, message: str) -> bool:
+        """Detecta si el usuario quiere modificar/cambiar una reserva."""
+        msg = message.lower()
+        modify_words = [
+            "modifica", "modificar", "cambia", "cambiar", "aplazar",
+            "posponer", "mover", "reubicar", "reprogramar"
+        ]
+        appt_words = ["reserva", "cita", "turno", "hora"]
+        return any(m in msg for m in modify_words) and any(a in msg for a in appt_words)
 
     def _cancel_active_appointments(self, db: Session, patient_id: int) -> int:
         """Cancela citas activas en la base de datos."""
@@ -206,20 +327,45 @@ class ChatbotEngine:
 
     def _start_appointment_flow(self, db: Session, patient: Patient, platform: str) -> str:
         """Inicia el flujo guiado de reserva con recogida de datos."""
-        patient.status = "cita_nombre"
-        db.commit()
-        reply = (
-            "¡Perfecto! Voy a agendar tu cita.\n\n"
-            "**Paso 1 de 3: ¿Cuál es tu nombre completo?**\n"
-            "(Escribe *cancelar* en cualquier momento para salir)"
-        )
-        self.record_message(db, patient.id, platform, "bot", reply, intent="ask_name_for_appointment")
+        has_name = patient.full_name and not patient.full_name.startswith("Usuario")
+        has_phone = bool(patient.phone)
+
+        if has_name and has_phone:
+            patient.status = "cita_fecha_hora"
+            db.commit()
+            reply = (
+                f"¡Perfecto, {patient.full_name}! Ya tengo tus datos.\n\n"
+                "**¿Qué día y hora prefieres?**\n"
+                "Ejemplo: 'Mañana a las 10:00' o 'Hoy a las 15:30'"
+            )
+            self.record_message(db, patient.id, platform, "bot", reply, intent="ask_date_for_appointment")
+            return reply
+
+        if not has_name:
+            patient.status = "cita_nombre"
+            db.commit()
+            reply = (
+                "¡Perfecto! Voy a agendar tu cita.\n\n"
+                "**Paso 1 de 3: ¿Cuál es tu nombre completo?**\n"
+                "(Escribe *cancelar* en cualquier momento para salir)"
+            )
+            self.record_message(db, patient.id, platform, "bot", reply, intent="ask_name_for_appointment")
+        else:
+            patient.status = "cita_telefono"
+            db.commit()
+            reply = (
+                f"¡Perfecto, {patient.full_name}! Voy a agendar tu cita.\n\n"
+                "**Paso 2 de 3: ¿Cuál es tu número de teléfono?**\n"
+                "(Ej: 666123456 o +34 666 123 456)"
+            )
+            self.record_message(db, patient.id, platform, "bot", reply, intent="ask_phone_for_appointment")
+            
         return reply
 
     def _parse_relative_datetime(self, text: str) -> Optional[datetime]:
         """Extrae día y hora de texto en español"""
         msg = text.lower()
-        now = datetime.utcnow()
+        now = datetime.now()
         
         days_map = {
             "lunes": 0, "martes": 1, "miercoles": 2, "miércoles": 2, 
@@ -248,6 +394,14 @@ class ChatbotEngine:
             
             if target_hour < 12 and ("tarde" in msg or "pm" in msg):
                 target_hour += 12
+                
+            if target_day is None:
+                if now.hour > target_hour:
+                    target_day = (now.weekday() + 1) % 7
+                    msg += " mañana" # Add reference for days_ahead calculation
+                else:
+                    target_day = now.weekday()
+                    msg += " hoy"
                 
         if target_day is not None and target_hour is not None:
             days_ahead = target_day - now.weekday()
@@ -285,6 +439,7 @@ class ChatbotEngine:
         context: str = "",
         conversation_history: Optional[List[Dict[str, str]]] = None,
         patient_context: str = "",
+        medical_mode: bool = False,
     ) -> Optional[str]:
         """Obtiene respuesta de Grok con historial de conversación."""
         if not self.grok_enabled:
@@ -308,11 +463,19 @@ class ChatbotEngine:
                 "5. NUNCA confirmes, crees, modifiques ni canceles citas por tu cuenta.\n"
                 "6. Para citas, usa SOLO los datos de 'CITAS ACTIVAS EN BASE DE DATOS'.\n"
                 "7. En saludos, preséntate como la clínica de forma cálida. NO pidas agendar cita de entrada.\n"
-                "8. Solo menciona agendar si el paciente lo pide o tras hablar de un problema.\n"
-                "9. Tono empático y profesional.\n"
-                "10. Máximo 200 caracteres.\n"
+                "8. Si el paciente describe síntomas, responde PRIMERO con orientación práctica y empática.\n"
+                "9. NO pidas nombre, teléfono ni datos personales; el sistema agendará después si hace falta.\n"
+                "10. Tono empático y profesional.\n"
                 "11. NUNCA des diagnósticos - solo orientación.\n"
             )
+            max_tokens = 250
+            if medical_mode:
+                system_prompt += (
+                    "\n12. Prioriza explicar qué puede hacer ahora para aliviar el problema.\n"
+                    "13. Menciona cuándo acudir a urgencias si procede.\n"
+                    "14. Puedes usar hasta 400 caracteres si hace falta."
+                )
+                max_tokens = 400
             
             if patient_context:
                 system_prompt += f"\n\n{patient_context}"
@@ -329,7 +492,7 @@ class ChatbotEngine:
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=messages,
-                max_tokens=250,
+                max_tokens=max_tokens,
                 temperature=0.4
             )
             
@@ -369,18 +532,29 @@ class ChatbotEngine:
             self.record_message(db, patient.id, platform, "bot", reply, intent="welcome")
             return reply
 
-        # Cancelar reserva (solo actúa sobre la base de datos real)
         if self._detect_cancel_appointment_intent(message_text):
             cancelled = self._cancel_active_appointments(db, patient.id)
             if cancelled:
                 reply = (
-                    f"✅ He cancelado {cancelled} cita(s) en el sistema.\n"
+                    f"✅ He anulada {cancelled} cita(s) en el sistema.\n"
                     "Ya no tienes reservas pendientes."
                 )
             else:
                 reply = "No tienes ninguna cita activa en nuestro sistema."
             self.record_message(db, patient.id, platform, "bot", reply, intent="appointment_cancelled")
             return reply
+
+        # Modificar reserva
+        if self._detect_modify_appointment_intent(message_text):
+            cancelled = self._cancel_active_appointments(db, patient.id)
+            if cancelled:
+                reply = "He anulado tu antigua cita para poder reprogramarla."
+                self.record_message(db, patient.id, platform, "bot", reply, intent="appointment_modified")
+                # Immediately start the flow
+                return f"{reply}\n\n" + self._start_appointment_flow(db, patient, platform)
+            elif patient.status not in self.BOOKING_STATES:
+                # Started asking for modification without existing appt
+                return self._start_appointment_flow(db, patient, platform)
 
         # Cancelar flujo de reserva en curso
         if patient.status in self.BOOKING_STATES and message_text.strip().lower() in {
@@ -392,26 +566,34 @@ class ChatbotEngine:
             self.record_message(db, patient.id, platform, "bot", reply, intent="appointment_cancelled")
             return reply
 
+        # Salir del flujo de reserva si el usuario quiere preguntar algo
+        if patient.status in self.BOOKING_STATES and self._wants_to_exit_booking_for_question(message_text):
+            patient.status = "new"
+            db.commit()
+
         # ===== FLUJO DE AGENDAMIENTO DE CITA (Estados específicos) =====
         
-        # ESTADO 1: Usuario quiere cita → Pedir nombre
-        if self._wants_appointment(message_text, history) and patient.status not in self.BOOKING_STATES:
+        # ESTADO 1: Usuario quiere cita ahora → Pedir nombre
+        if self._should_start_booking(message_text, history) and patient.status not in self.BOOKING_STATES:
             return self._start_appointment_flow(db, patient, platform)
 
         # ESTADO 2: Recolectar nombre → Pedir teléfono
         if patient.status == "cita_nombre":
-            # Guardar nombre
-            patient.full_name = message_text.strip()
-            patient.status = "cita_telefono"
-            db.commit()
-            
-            reply = (
-                f"✅ Perfecto, {patient.full_name}.\n\n"
-                "**Paso 2 de 3: ¿Cuál es tu número de teléfono?**\n"
-                "(Ej: 666123456 o +34 666 123 456)"
-            )
-            self.record_message(db, patient.id, platform, "bot", reply, intent="ask_phone_for_appointment")
-            return reply
+            if not self._looks_like_name(message_text):
+                patient.status = "new"
+                db.commit()
+            else:
+                patient.full_name = message_text.strip()
+                patient.status = "cita_telefono"
+                db.commit()
+                
+                reply = (
+                    f"✅ Perfecto, {patient.full_name}.\n\n"
+                    "**Paso 2 de 3: ¿Cuál es tu número de teléfono?**\n"
+                    "(Ej: 666123456 o +34 666 123 456)"
+                )
+                self.record_message(db, patient.id, platform, "bot", reply, intent="ask_phone_for_appointment")
+                return reply
 
         # ESTADO 3: Recolectar teléfono → Pedir fecha y hora
         if patient.status == "cita_telefono":
@@ -460,8 +642,13 @@ class ChatbotEngine:
             
             busy_hours = [a.appointment_date.hour for a in appts_day]
             
+            if parsed_dt.hour < 8 or parsed_dt.hour > 19:
+                reply = f"❌ No atendemos antes de las 8:00 ni después de las 19:00.\n\n¿Puedes elegir otra hora dentro de nuestro horario?"
+                self.record_message(db, patient.id, platform, "bot", reply, intent="slot_not_available")
+                return reply
+                
             if parsed_dt.hour in busy_hours:
-                available_hours = [h for h in range(9, 20) if h not in busy_hours]
+                available_hours = [h for h in range(8, 20) if h not in busy_hours]
                 if available_hours:
                     free_list = ", ".join([f"{h}:00" for h in available_hours])
                     reply = (
@@ -523,15 +710,25 @@ class ChatbotEngine:
             f"TELÉFONO CLÍNICA: {clinic_phone}"
         )
 
+        medical_mode = self._has_medical_query_intent(message_text) or self._wants_advice_first(message_text)
+        deferred_booking = self._has_deferred_appointment_intent(message_text)
+
         reply = self._get_grok_response(
             message_text,
             context,
             conversation_history=history,
             patient_context=patient_context,
+            medical_mode=medical_mode,
         )
 
         if not reply:
             reply = self._fallback_response(message_text, triage_code)
+
+        if deferred_booking and reply:
+            reply += (
+                "\n\n📅 Cuando quieras reservar la cita, escribe **agendar cita** "
+                "y te pediré tus datos paso a paso."
+            )
 
         self.record_message(db, patient.id, platform, "bot", reply, triage_code=triage_code, intent="general_qa")
         return reply
